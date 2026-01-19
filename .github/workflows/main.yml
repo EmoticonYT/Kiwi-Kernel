@@ -1,0 +1,38 @@
+name: KIWI+Essentials
+
+on:
+  push:
+    branches: [ main, 0.1.4 ]
+
+jobs:
+  build-kiwi:
+    runs-on: macos-latest
+
+    steps:
+      - name: Checkout Source
+        uses: actions/checkout@v4
+
+      - name: Install Toolchains
+        run: |
+          # Getting the compilers you requested via brew
+          brew install aarch64-elf-gcc aarch64-elf-binutils i686-elf-gcc i686-elf-binutils
+
+      - name: Compile Kiwi
+        run: |
+          # Your exact build logic
+          i686-elf-gcc -ffreestanding -nostdlib -c boot.S -o boot.o
+          i686-elf-gcc -ffreestanding -nostdlib -c kernel.c -o kernel.o
+          i686-elf-ld -n -T linker.ld boot.o kernel.o -o kernel.elf
+
+      - name: Cleanup Work Files
+        run: |
+          # Getting rid of everything but the completed binary
+          find . -type f ! -name 'kernel.elf' -delete
+          # Optional: remove empty directories
+          find . -type d -empty -delete
+
+      - name: Upload Final Binary
+        uses: actions/upload-artifact@v4
+        with:
+          name: completed-kernel
+          path: kernel.elf
